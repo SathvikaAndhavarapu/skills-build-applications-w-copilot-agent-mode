@@ -6,7 +6,7 @@ const router = Router();
 // Register user
 router.post('/register', async (req: Request, res: Response) => {
   try {
-    const { username, email, password, firstName, lastName } = req.body;
+    const { username, email, password: pwd, firstName, lastName } = req.body;
     
     // Check if user already exists
     const existingUser = await User.findOne({ $or: [{ username }, { email }] });
@@ -17,15 +17,15 @@ router.post('/register', async (req: Request, res: Response) => {
     const user = new User({
       username,
       email,
-      password,
+      password: pwd,
       firstName,
       lastName,
     });
 
     await user.save();
     
-    const userResponse = user.toObject();
-    delete userResponse.password;
+    const userObj = user.toObject();
+    const { password, ...userResponse } = userObj;
     
     res.status(201).json({ message: 'User registered successfully', user: userResponse });
   } catch (error) {
@@ -36,7 +36,7 @@ router.post('/register', async (req: Request, res: Response) => {
 // Login user
 router.post('/login', async (req: Request, res: Response) => {
   try {
-    const { username, password } = req.body;
+    const { username, password: pwd } = req.body;
     
     const user = await User.findOne({ username });
     if (!user) {
@@ -44,12 +44,12 @@ router.post('/login', async (req: Request, res: Response) => {
     }
 
     // Note: In production, use bcrypt to compare passwords
-    if (user.password !== password) {
+    if (user.password !== pwd) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    const userResponse = user.toObject();
-    delete userResponse.password;
+    const userObj = user.toObject();
+    const { password, ...userResponse } = userObj;
     
     res.json({ message: 'Login successful', user: userResponse });
   } catch (error) {

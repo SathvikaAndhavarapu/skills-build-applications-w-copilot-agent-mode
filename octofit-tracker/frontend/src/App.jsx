@@ -1,11 +1,58 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from './assets/vite.svg'
 import heroImg from './assets/hero.png'
 import './App.css'
+import { API_BASE_URL, API_ENDPOINTS, apiFetch } from './config/api'
 
 function App() {
   const [count, setCount] = useState(0)
+  const [apiStatus, setApiStatus] = useState('checking...')
+  const [users, setUsers] = useState([])
+  const [activities, setActivities] = useState([])
+  const [loading, setLoading] = useState(false)
+
+  // Check API health on component mount
+  useEffect(() => {
+    checkApiHealth()
+  }, [])
+
+  const checkApiHealth = async () => {
+    try {
+      const data = await apiFetch(API_ENDPOINTS.HEALTH)
+      setApiStatus('✅ Connected')
+      console.log('API Health:', data)
+    } catch (error) {
+      setApiStatus('❌ Disconnected')
+      console.error('API Health Check Failed:', error)
+    }
+  }
+
+  const fetchUsers = async () => {
+    setLoading(true)
+    try {
+      const data = await apiFetch(API_ENDPOINTS.USERS)
+      setUsers(data)
+      console.log('Users:', data)
+    } catch (error) {
+      console.error('Failed to fetch users:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const fetchActivities = async () => {
+    setLoading(true)
+    try {
+      const data = await apiFetch(API_ENDPOINTS.ACTIVITIES)
+      setActivities(data)
+      console.log('Activities:', data)
+    } catch (error) {
+      console.error('Failed to fetch activities:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <>
@@ -16,9 +63,12 @@ function App() {
           <img src={viteLogo} className="vite" alt="Vite logo" />
         </div>
         <div>
-          <h1>Get started</h1>
+          <h1>Octofit Tracker</h1>
           <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
+            API Base URL: <code>{API_BASE_URL}</code>
+          </p>
+          <p>
+            API Status: <strong>{apiStatus}</strong>
           </p>
         </div>
         <button
@@ -28,6 +78,43 @@ function App() {
         >
           Count is {count}
         </button>
+        
+        <div style={{ marginTop: '20px', textAlign: 'left' }}>
+          <h2>API Testing</h2>
+          <button onClick={checkApiHealth} style={{ marginRight: '10px' }}>
+            Check Health
+          </button>
+          <button onClick={fetchUsers} style={{ marginRight: '10px' }} disabled={loading}>
+            {loading ? 'Loading...' : 'Fetch Users'}
+          </button>
+          <button onClick={fetchActivities} disabled={loading}>
+            {loading ? 'Loading...' : 'Fetch Activities'}
+          </button>
+          
+          {users.length > 0 && (
+            <div style={{ marginTop: '15px', padding: '10px', backgroundColor: '#f5f5f5' }}>
+              <h3>Users ({users.length})</h3>
+              <ul>
+                {users.map((user) => (
+                  <li key={user._id}>{user.username} - {user.email}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          
+          {activities.length > 0 && (
+            <div style={{ marginTop: '15px', padding: '10px', backgroundColor: '#f5f5f5' }}>
+              <h3>Activities ({activities.length})</h3>
+              <ul>
+                {activities.map((activity) => (
+                  <li key={activity._id}>
+                    {activity.activityType} - {activity.duration}min - {activity.calories} cal
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
       </section>
 
       <div className="ticks"></div>
