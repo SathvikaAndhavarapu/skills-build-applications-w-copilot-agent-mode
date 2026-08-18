@@ -13,6 +13,17 @@ import workoutsRoutes from './routes/workouts';
 const app = express();
 const PORT = process.env.PORT || 8000;
 
+// Determine server URL based on environment
+const getServerUrl = () => {
+  const codespaceName = process.env.CODESPACE_NAME;
+  if (codespaceName) {
+    return `https://${codespaceName}-8000.app.github.dev`;
+  }
+  return `http://localhost:${PORT}`;
+};
+
+const SERVER_URL = getServerUrl();
+
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -42,7 +53,12 @@ mongoose.connect(mongoUrl)
 
 // Routes
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', message: 'Server is running' });
+  res.json({ 
+    status: 'ok', 
+    message: 'Server is running',
+    serverUrl: SERVER_URL,
+    environment: process.env.CODESPACE_NAME ? 'Codespaces' : 'localhost'
+  });
 });
 
 app.use('/api/auth', authRoutes);
@@ -62,7 +78,9 @@ app.use(errorHandler);
 
 // Start server
 const server = app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  console.log(`\n🚀 Server is running on port ${PORT}`);
+  console.log(`📍 Environment: ${process.env.CODESPACE_NAME ? 'GitHub Codespaces' : 'Local Development'}`);
+  console.log(`🌐 API URL: ${SERVER_URL}\n`);
 });
 
 // Handle server shutdown gracefully
